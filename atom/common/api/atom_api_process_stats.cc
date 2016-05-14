@@ -12,36 +12,36 @@
 #include "native_mate/dictionary.h"
 
 namespace {
-  
-v8::Local<v8::Value> GetProcessMetrics(v8::Isolate* isolate) {
+
+v8::Local<v8::Value> GetProcessMemoryInfo(v8::Isolate* isolate) {
   mate::Dictionary dict = mate::Dictionary::CreateEmpty(isolate);
   std::unique_ptr<base::ProcessMetrics> metrics(
     base::ProcessMetrics::CreateCurrentProcessMetrics());
-    
+
   dict.Set("workingSetSize", (double)(metrics->GetWorkingSetSize() >> 10));
   dict.Set("peakWorkingSetSize", (double)(metrics->GetPeakWorkingSetSize() >> 10));
-  
+
   size_t private_bytes, shared_bytes;
   if (metrics->GetMemoryBytes(&private_bytes, &shared_bytes)) {
     dict.Set("privateBytes", (double)(private_bytes >> 10));
     dict.Set("sharedBytes", (double)(shared_bytes >> 10));
   }
-  
+
   return dict.GetHandle();
 }
 
 v8::Local<v8::Value> GetSystemMemoryInfo(v8::Isolate* isolate, mate::Arguments* args) {
   mate::Dictionary dict = mate::Dictionary::CreateEmpty(isolate);
   base::SystemMemoryInfoKB memInfo;
-  
+
   if (!base::GetSystemMemoryInfo(&memInfo)) {
     args->ThrowError("Unable to retrieve system memory information");
     return v8::Undefined(isolate);
   }
-  
+
   dict.Set("total", memInfo.total);
   dict.Set("free", memInfo.free);
-  
+
   // NB: These return bogus values on OS X
 #if !defined(OS_MACOSX)
   dict.Set("swapTotal", memInfo.swap_total);
@@ -54,7 +54,7 @@ v8::Local<v8::Value> GetSystemMemoryInfo(v8::Isolate* isolate, mate::Arguments* 
 void Initialize(v8::Local<v8::Object> exports, v8::Local<v8::Value> unused,
                 v8::Local<v8::Context> context, void* priv) {
   mate::Dictionary dict(context->GetIsolate(), exports);
-  dict.SetMethod("getProcessMetrics", &GetProcessMetrics);
+  dict.SetMethod("getProcessMemoryInfo", &GetProcessMemoryInfo);
   dict.SetMethod("getSystemMemoryInfo", &GetSystemMemoryInfo);
 }
 
